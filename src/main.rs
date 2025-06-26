@@ -62,7 +62,7 @@ fn main() -> Result<(), std::io::Error> {
 
     if !args.destination.exists() {
         eprintln!("Destination directory does not exist. Create it first, then try again.");
-        return;
+        return Ok(());
     }
 
     for file_entry in files_to_copy {

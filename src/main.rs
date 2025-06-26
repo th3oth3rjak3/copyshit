@@ -18,10 +18,6 @@ struct Args {
     /// The extension that the files must end with
     #[arg(short, long)]
     extension: String,
-
-    /// Flatten all files into the single output directory (ignore subdirectories)
-    #[arg(short, long)]
-    flatten: bool,
 }
 
 fn humanize_bytes(bytes: u64) -> String {
@@ -65,27 +61,14 @@ fn main() -> Result<(), std::io::Error> {
     }
 
     if !args.destination.exists() {
-        fs::create_dir(&args.destination)?;
+        eprintln!("Destination directory does not exist. Create it first, then try again.");
+        return;
     }
 
     for file_entry in files_to_copy {
         let source_path = file_entry.path();
 
-        let dest_path = if args.flatten {
-            // Flatten: just use filename
-            args.destination.join(source_path.file_name().unwrap())
-        } else {
-            // Preserve structure: calculate relative path from source
-            let relative_path = source_path.strip_prefix(&args.source).unwrap();
-            let dest_path = args.destination.join(relative_path);
-
-            // Create parent directories if they don't exist
-            if let Some(parent) = dest_path.parent() {
-                fs::create_dir_all(parent)?;
-            }
-
-            dest_path
-        };
+        let dest_path = args.destination.join(source_path.file_name().unwrap());
 
         if dest_path.exists() {
             println!("Skipping {} - already exists", dest_path.display());

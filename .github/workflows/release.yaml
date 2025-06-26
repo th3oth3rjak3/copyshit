@@ -22,7 +22,7 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             binary_name: copyshit.exe
-            asset_name: copyshit-windows-x86_64.exe
+            asset_name: copyshit-windows-x86_64
           - os: macos-latest
             target: x86_64-apple-darwin
             binary_name: copyshit
@@ -40,22 +40,28 @@ jobs:
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Prepare binary (Unix)
+      - name: Prepare release archive (Unix)
         if: matrix.os != 'windows-latest'
         run: |
-          cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} ${{ matrix.asset_name }}
-          strip ${{ matrix.asset_name }}
+          mkdir -p release
+          cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} release/
+          strip release/${{ matrix.binary_name }}
+          tar -czf ${{ matrix.asset_name }}.tar.gz -C release .
 
-      - name: Prepare binary (Windows)
+      - name: Prepare release archive (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} ${{ matrix.asset_name }}
+          mkdir release
+          cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} release/
+          Compress-Archive -Path release/* -DestinationPath ${{ matrix.asset_name }}.zip
 
       - name: Upload release asset
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}
-          path: ${{ matrix.asset_name }}
+          path: |
+            ${{ matrix.asset_name }}.tar.gz
+            ${{ matrix.asset_name }}.zip
 
   release:
     name: Create Release
@@ -72,6 +78,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            copyshit-linux-x86_64/copyshit-linux-x86_64
-            copyshit-windows-x86_64.exe/copyshit-windows-x86_64.exe
-            copyshit-macos-x86_64/copyshit-macos-x86_64
+            copyshit-linux-x86_64/copyshit-linux-x86_64.tar.gz
+            copyshit-windows-x86_64/copyshit-windows-x86_64.zip
+            copyshit-macos-x86_64/copyshit-macos-x86_64.tar.gz
